@@ -1,29 +1,64 @@
-%% 5.1
-clf
-syms q1 q2 q3 q4 q5 q6 real
-MF=0.161;
-L4(1) = Link('revolute'   ,'alpha',      0,  'a',  0,     'd',    0.340 , 'offset',     0, 'qlim',  [-170*pi/180 170*pi/180],   'modified');
-L4(2) = Link('revolute'  ,'alpha',   pi/2,  'a',  0, 'd',    0 , 'offset',    0, 'qlim',       [-120*pi/180 120*pi/180],   'modified');
-L4(3) = Link('revolute'   ,'alpha',  -pi/2,  'a',  0,     'd',    0.400 , 'offset',     0, 'qlim',  [-170*pi/180 170*pi/180],   'modified');
-L4(4) = Link('revolute'   ,'alpha',  pi/2,  'a',  0,     'd',    0 , 'offset',     0, 'qlim',  [-120*pi/180 120*pi/180],   'modified');
-L4(5) = Link('revolute'   ,'alpha',  -pi/2,  'a',  0,     'd',    0.400 , 'offset',     0, 'qlim',  [-170*pi/180 170*pi/180],   'modified');
-L4(6) = Link('revolute'   ,'alpha',  pi/2,  'a',  0,     'd',    0 , 'offset',     0, 'qlim',  [-120*pi/180 120*pi/180],   'modified');
-L4(7) = Link('revolute'   ,'alpha',  -pi/2,  'a',  0,     'd',    MF , 'offset',     0, 'qlim',  [-175*pi/180 175*pi/180],   'modified');
+%% 6
+clc, clear ,close all
+
+
+L1=0.340; L3=0.400; L5=0.400; L7=0.161;
+
+
+L(1) = Link('revolute'   ,'alpha',      0,  'a',  0,     'd',    L1 , 'offset',     0, 'qlim',  [-170*pi/180 170*pi/180],   'modified');
+L(2) = Link('revolute'  ,'alpha',   pi/2,  'a',  0, 'd',    0 , 'offset',    0, 'qlim',       [-120*pi/180 120*pi/180],   'modified');
+L(3) = Link('revolute'   ,'alpha',  -pi/2,  'a',  0,     'd',    L3 , 'offset',     0, 'qlim',  [-170*pi/180 170*pi/180],   'modified');
+L(4) = Link('revolute'   ,'alpha',  pi/2,  'a',  0,     'd',    0 , 'offset',     0, 'qlim',  [-120*pi/180 120*pi/180],   'modified');
+L(5) = Link('revolute'   ,'alpha',  -pi/2,  'a',  0,     'd',    L5, 'offset',     0, 'qlim',  [-170*pi/180 170*pi/180],   'modified');
+L(6) = Link('revolute'   ,'alpha',  pi/2,  'a',  0,     'd',    0 , 'offset',     0, 'qlim',  [-120*pi/180 120*pi/180],   'modified');
+L(7) = Link('revolute'   ,'alpha',  -pi/2,  'a',  0,     'd',    L7 , 'offset',     0, 'qlim',  [-175*pi/180 175*pi/180],   'modified');
 
 ws=[-5 2 -4 4 -2 5];
 
 plot_options = {'workspace',ws,'scale',.4,'view',[125 25],'jaxes','basewidth',10};
-RKuka = SerialLink(L4,'name','Kuka','plotopt',plot_options)
+RKuka = SerialLink(L,'name','Kuka','plotopt',plot_options)
 T0tcp=RKuka.fkine([0,0,0,0,0,0,0]);
 %Determinar la posición del último sistema coordenado dado q:
-q=[pi/3 pi/6 pi/2 pi/4 3*pi/4 3*pi/4 3*pi/4];
-transformRCV=RKuka.fkine(q)
-clf
-figure()
-RKuka.teach(q)
-%axis ([-5 40 -70 70 -7 70])
-axis equal
-%% 5.2
+% q3=0
+q=[pi/3 pi/6 0 pi/4 3*pi/4 3*pi/4 3*pi/4];
+
+MTH=RKuka.fkine(q)
+
+pos=MTH(1:3,4);
+
+angles=tr2rpy(MTH,'deg','zyx');  % Phi, Theta Psi z,x,y
+
+R=rotz(angles(1),'deg')*roty(angles(2),'deg')*rotx(angles(3),'deg')
+
+z_EF=R*[0;0;1];
+
+OC=pos-L7*z_EF
+x=OC(1); y=OC(2); z=OC(3);
+r=sqrt(x^2+y^2);
+
+A=sqrt((z-L1)^2+r^2);
+
+c_alpha=(A^2-L3^2-L5^2)/(-2*L3*L5);
+s_alpha=sqrt(1-c_alpha^2);
+s_beta=s_alpha*L5/A;
+beta=atan2(s_beta,sqrt(1-s_beta^2));
+gamma=atan2(r,z-L1);
+
+q3=0;
+q1=atan2(y,x);
+q4=atan2(s_alpha,c_alpha);
+
+q2=beta+gamma;
+
+
+q_calc=[q1,q2,q3,q4,0,0,0];
+
+q*180/pi
+q_calc*180/pi
+
+Twrist=RKuka.fkine(q_calc)
+
+%% 5.2 (old)
 
 MF=0.161;
 dhparams = [0   	0	0.340   	0;
