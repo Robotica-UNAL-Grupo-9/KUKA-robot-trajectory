@@ -20,43 +20,76 @@ RKuka = SerialLink(L,'name','Kuka','plotopt',plot_options)
 T0tcp=RKuka.fkine([0,0,0,0,0,0,0]);
 %Determinar la posición del último sistema coordenado dado q:
 % q3=0
-q=[pi/3 pi/6 0 pi/4 3*pi/4 3*pi/4 3*pi/4];
+q=[pi/3 pi/6 0 pi/4 -pi/3 3*pi/4 pi/4];
 
 MTH=RKuka.fkine(q)
 
-pos=MTH(1:3,4);
+[R,pos]=tr2rt(MTH);
 
+z_EF=R*[0;0;L7];
 angles=tr2rpy(MTH,'deg','zyx');  % Phi, Theta Psi z,x,y
 
-R=rotz(angles(1),'deg')*roty(angles(2),'deg')*rotx(angles(3),'deg')
-
-z_EF=R*[0;0;1];
-
-OC=pos-L7*z_EF
+OC=pos-z_EF;
 x=OC(1); y=OC(2); z=OC(3);
 r=sqrt(x^2+y^2);
 
 A=sqrt((z-L1)^2+r^2);
 
-c_alpha=(A^2-L3^2-L5^2)/(-2*L3*L5);
-s_alpha=sqrt(1-c_alpha^2);
-s_beta=s_alpha*L5/A;
+c4=(A^2-L3^2-L5^2)/(2*L3*L5);
+s4=sqrt(1-c4^2);
+s_beta=s4*L5/A;
 beta=atan2(s_beta,sqrt(1-s_beta^2));
 gamma=atan2(r,z-L1);
 
 q3=0;
-q1=atan2(y,x);
-q4=atan2(s_alpha,c_alpha);
+q1=atan2(-y,-x);
+q4=atan2(s4,c4);
 
-q2=beta+gamma;
+q2=-beta+gamma;
 
 
 q_calc=[q1,q2,q3,q4,0,0,0];
 
+
+Twrist=RKuka.fkine(q_calc);
+[Rwrist,Pwrist]=tr2rt(Twrist);
+
+R36=inv(Rwrist)*R;
+
+angles=tr2rpy(R36)*180/pi  % Phi, Theta Psi z,x,y
+q_567=tr2eul(R36);
+
+c6=R36(3,3);
+
+
+q5=atan2(R36(1,3),R36(2,3));
+q6=atan2(sqrt(1-c6^2),c6);
+q7=atan2(-R36(3,1),R36(3,2));
+
+q_567=[q5 q6 q7] ;
+
+q_calc=[q1,q2,q3,q4,q_567];
+
 q*180/pi
 q_calc*180/pi
 
-Twrist=RKuka.fkine(q_calc)
+Tcalc=RKuka.fkine(q_calc);
+
+e=[Tcalc ,MTH];
+
+var=RKuka.fkine([q(1:4), 0 0 0]);
+
+
+%% Punto 3 
+close all
+
+t=linspace(0,1,1)';
+
+n=4;
+RKuka.plot([q(1:n), zeros(1,7-n)].*t)
+hold on
+RKuka.plot([q_calc(1:n), zeros(1,7-n)].*t)
+
 
 %% 5.2 (old)
 
