@@ -17,7 +17,7 @@ ws=[-5 2 -4 4 -2 5];
 
 plot_options = {'workspace',ws,'scale',.4,'view',[125 25],'jaxes','basewidth',10};
 RKuka = SerialLink(L,'name','Kuka','plotopt',plot_options)
-T0tcp=RKuka.fkine([0,0,0,0,0,0,0]);
+
 %Determinar la posición del último sistema coordenado dado q:
 % q3=0
 q=[pi/3 pi/6 0 pi/4 -pi/3 3*pi/4 pi/4];
@@ -56,15 +56,15 @@ Twrist=RKuka.fkine(q_calc);
 
 R36=inv(Rwrist)*R;
 
-angles=tr2rpy(R36)*180/pi  % Phi, Theta Psi z,x,y
-q_567=tr2eul(R36);
+angles=tr2eul(R36,'deg')  % Phi, Theta Psi z,x,y
+q_567_alt=tr2eul(R36);
 
 c6=R36(3,3);
 
 
-q5=atan2(R36(1,3),R36(2,3));
+q5=atan2(R36(2,3),R36(1,3));
 q6=atan2(sqrt(1-c6^2),c6);
-q7=atan2(-R36(3,1),R36(3,2));
+q7=atan2(R36(3,2),-R36(3,1));
 
 q_567=[q5 q6 q7] ;
 
@@ -75,7 +75,7 @@ q_calc*180/pi
 
 Tcalc=RKuka.fkine(q_calc);
 
-e=[Tcalc ,MTH];
+e=Tcalc -MTH
 
 var=RKuka.fkine([q(1:4), 0 0 0]);
 
