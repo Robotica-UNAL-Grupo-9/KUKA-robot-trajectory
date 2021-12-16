@@ -142,7 +142,38 @@ RKuka.plot([q_calc(1:n), zeros(1,7-n)].*t)
 
 
 %% Cinematica Inversa Toolbox RCV
+clear variables
+clc
+syms q1 q2 q3 q4 q5 q6 q7 MF L_1 L_2 L_3 real
+MF=0.161;
+L_1=0.34;
+L_2=0.40;
+L_3=0.40;
+L4(1) = Link('revolute'   ,'alpha',      0,  'a',  0,     'd',    L_1 , 'offset',     0, 'qlim',  [-170*pi/180 170*pi/180],   'modified');
+L4(2) = Link('revolute'  ,'alpha',   pi/2,  'a',  0, 'd',    0 , 'offset',    0, 'qlim',       [-120*pi/180 120*pi/180],   'modified');
+L4(3) = Link('revolute'   ,'alpha',  -pi/2,  'a',  0,     'd',    L_2 , 'offset',     0, 'qlim',  [-170*pi/180 170*pi/180],   'modified');
+L4(4) = Link('revolute'   ,'alpha',  pi/2,  'a',  0,     'd',    0 , 'offset',     0, 'qlim',  [-120*pi/180 120*pi/180],   'modified');
+L4(5) = Link('revolute'   ,'alpha',  -pi/2,  'a',  0,     'd',    L_3 , 'offset',     0, 'qlim',  [-170*pi/180 170*pi/180],   'modified');
+L4(6) = Link('revolute'   ,'alpha',  pi/2,  'a',  0,     'd',    0 , 'offset',     0, 'qlim',  [-120*pi/180 120*pi/180],   'modified');
+L4(7) = Link('revolute'   ,'alpha',  -pi/2,  'a',  0,     'd',    MF , 'offset',     0, 'qlim',  [-175*pi/180 175*pi/180],   'modified');
 
+ws=[-10 50 -30 30 -2 70];
+
+plot_options = {'workspace',ws,'scale',.4,'view',[125 25],'basewidth',10};
+RKuka = SerialLink(L4,'name','Kuka','plotopt',plot_options);
+
+
+q=[0 -pi/3 0 pi/3 0 pi/3 0]; %Punto de prueba
+MTH=RKuka.fkine(q); %MTH punto de prueba
+
+qikine=(RKuka.ikine(MTH)); %Cinematica inversa funcion ikine
+MTHikine=RKuka.fkine(qikine);%Verificacion MTH a partir de solucion ikine
+
+qikunc=(RKuka.ikunc(MTH));%Cinematica inversa funcion ikunc
+MTHikunc=RKuka.fkine(qikunc);%Verificacion MTH a partir de solucion ikunc
+
+qikcon=(RKuka.ikcon(MTH));%Cinematica inversa funcion okcon
+MTHikcon=RKuka.fkine(qikcon);%Verificacion MTH a partir de solucion ikcon
 
 %% Pruebas
 coordinates=[ 0.4 0.6 0.5 30 20 45;
