@@ -140,65 +140,32 @@ hold on
 RKuka.plot([q_calc(1:n), zeros(1,7-n)].*t)
 
 
-%% 5.2 (old)
+%% Cinematica Inversa Toolbox RCV
+clear variables
+syms q1 q2 q3 q4 q5 q6 q7 MF L_1 L_2 L_3 real
+MF=0;
+L_1=34;
+L_2=40;
+L_3=40;
+L4(1) = Link('revolute'   ,'alpha',      0,  'a',  0,     'd',    L_1 , 'offset',     0, 'qlim',  [-170*pi/180 170*pi/180],   'modified');
+L4(2) = Link('revolute'  ,'alpha',   pi/2,  'a',  0, 'd',    0 , 'offset',    0, 'qlim',       [-120*pi/180 120*pi/180],   'modified');
+L4(3) = Link('revolute'   ,'alpha',  -pi/2,  'a',  0,     'd',    L_2 , 'offset',     0, 'qlim',  [-170*pi/180 170*pi/180],   'modified');
+L4(4) = Link('revolute'   ,'alpha',  pi/2,  'a',  0,     'd',    0 , 'offset',     0, 'qlim',  [-120*pi/180 120*pi/180],   'modified');
+L4(5) = Link('revolute'   ,'alpha',  -pi/2,  'a',  0,     'd',    L_3 , 'offset',     0, 'qlim',  [-170*pi/180 170*pi/180],   'modified');
+L4(6) = Link('revolute'   ,'alpha',  pi/2,  'a',  0,     'd',    0 , 'offset',     0, 'qlim',  [-120*pi/180 120*pi/180],   'modified');
+L4(7) = Link('revolute'   ,'alpha',  -pi/2,  'a',  0,     'd',    MF , 'offset',     0, 'qlim',  [-175*pi/180 175*pi/180],   'modified');
 
-MF=0.161;
-dhparams = [0   	0	0.340   	0;
-            0	pi/2       0       0
-            0	-pi/2	0.400	0;
-            0   	pi/2	0	0;
-            0       -pi/2	0.400   	0;
-            0       pi/2       0       0;
-            0       -pi/2       MF       0];
-RkukaRST = rigidBodyTree;     
-body1 = rigidBody('body1');
-jnt1 = rigidBodyJoint('jnt1','revolute');
+ws=[-10 50 -30 30 -2 70];
 
-setFixedTransform(jnt1,dhparams(1,:),'mdh');
-body1.Joint = jnt1;
+plot_options = {'workspace',ws,'scale',.4,'view',[125 25],'basewidth',10};
+RKuka = SerialLink(L4,'name','Kuka','plotopt',plot_options);
 
-addBody(RkukaRST,body1,'base')
-body2 = rigidBody('body2');
-jnt2 = rigidBodyJoint('jnt2','revolute');
-body3 = rigidBody('body3');
-jnt3 = rigidBodyJoint('jnt3','revolute');
-body4 = rigidBody('body4');
-jnt4 = rigidBodyJoint('jnt4','revolute');
-body5 = rigidBody('body5');
-jnt5 = rigidBodyJoint('jnt5','revolute');
-body6 = rigidBody('body6');
-jnt6 = rigidBodyJoint('jnt6','revolute');
-body7 = rigidBody('body7');
-jnt7 = rigidBodyJoint('jnt7','revolute');
+T0tcp=RKuka.fkine([0,0,0,0,0,0,0]); %%Posicion de home
+q=[0 pi/4 0 pi/2 0 pi/2 0]; %Punto de prueba
+MTH=RKuka.fkine(q); %MTH punto de prueba
 
-setFixedTransform(jnt2,dhparams(2,:),'mdh');
-setFixedTransform(jnt3,dhparams(3,:),'mdh');
-setFixedTransform(jnt4,dhparams(4,:),'mdh');
-setFixedTransform(jnt5,dhparams(5,:),'mdh');
-setFixedTransform(jnt6,dhparams(6,:),'mdh');
-setFixedTransform(jnt7,dhparams(7,:),'mdh');
-body2.Joint = jnt2;
-body3.Joint = jnt3;
-body4.Joint = jnt4;
-body5.Joint = jnt5;
-body6.Joint = jnt6;
-body7.Joint = jnt7;
-addBody(RkukaRST,body2,'body1')
-addBody(RkukaRST,body3,'body2')
-addBody(RkukaRST,body4,'body3')
-addBody(RkukaRST,body5,'body4')
-addBody(RkukaRST,body6,'body5')
-addBody(RkukaRST,body7,'body6')
-
-%test=homeConfiguration(RkukaRST)
-q=[pi/3 pi/6 pi/2 pi/4 3*pi/4 3*pi/4 3*pi/4];
-qRST = struct('JointName',{'jnt1','jnt2','jnt3','jnt4','jnt5','jnt6','jnt7'},'JointPosition',{q(1),q(2),q(3),q(4),q(5),q(6),q(7)});
-
-%motionModel = taskSpaceMotionModel("RigidBodyTree",RkukaRST)
-transformRST = getTransform(RkukaRST,qRST,'body7')
-clf
-figure()
-show(RkukaRST,qRST);
+qikcon=(RKuka.ikcon(MTH));
+MTHikcon=RKuka.fkine(qikcon);
 
 
 
