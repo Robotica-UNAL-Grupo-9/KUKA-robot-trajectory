@@ -227,19 +227,19 @@ addBody(RkukaRST,body6,'body5')
 addBody(RkukaRST,body7,'body6')
 
 
-q=[0 -pi/3 0 pi/3 0 pi/3 0];%COnfiguracion 
+q=[0 -pi/3 0 pi/3 0 pi/3 0];%Cnfiguración punto de prueba 
 qRST = struct('JointName',{'jnt1','jnt2','jnt3','jnt4','jnt5','jnt6','jnt7'},'JointPosition',{q(1),q(2),q(3),q(4),q(5),q(6),q(7)});
 
 
-MTH_RST = getTransform(RkukaRST,qRST,'body7')
+MTH_RST = getTransform(RkukaRST,qRST,'body7')%MTH a partir del punto de prueba
 
-ik = inverseKinematics('RigidBodyTree',RkukaRST);
-weights = [0.25 0.25 0.25 1 1 1];
-initialguess = RkukaRST.homeConfiguration;
-[configSol,solInfo] = ik('body7',MTH_RST,weights,initialguess)
+ik = inverseKinematics('RigidBodyTree',RkukaRST);%Declaracion del solucionador de la cinematica inversa
+weights = [0.25 0.25 0.25 1 1 1];%Tolerancias deseadas para la solucion
+initialguess = RkukaRST.homeConfiguration;%Aproximacion inicial a la solucion
+[configSol,solInfo] = ik('body7',MTH_RST,weights,initialguess);%Solucion cinematica inversa a partir de los parametros anteriores
 qsolRST = struct2table(configSol);
-qsolRST
-MTHinvRST=getTransform(RkukaRST,configSol,'body7')
+
+MTHinvRST=getTransform(RkukaRST,configSol,'body7');%Verificacion MTH a partir de solucion encontrada
 
 %% Pruebas
 coordinates=[ 0.4 0.6 0.5 30 20 45;
