@@ -169,7 +169,6 @@ CR1(1:3 , 4) = coordinates(1:3,1)';
 [Qa , e1 ] = inverse_k(CR1 ,RKuka)
 
 R1 = tr2eul(MTH(1:3,1:3));
->>>>>>> Stashed changes
 
 
 
