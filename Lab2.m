@@ -20,7 +20,7 @@ offset=[0 0 0 0 0 0 0];
 qlim=[ -170 170;       -120 120;
        -170 170;       -120 120;
        -170 170;       -120 120;
-       -175 1750];
+       -175 175];
      
 for k=1:length(offset)
   
@@ -100,7 +100,7 @@ var=RKuka.fkine([q(1:4), 0 0 0]);
 
 
 %% Punto 3.7
-clc
+clc , close all
 
 L1=0.340; L3=0.400; L5=0.400; L7=0.161;
 
@@ -110,24 +110,41 @@ coordinates=[ 0.4 0.6 0.5 30 20 45;
               0.3 0.2 -0.1 -30 180 4;
               0.4 0.5 0 30 45  10];
             
+N=50;
+t=linspace(0,1,N)';
+            
 rta=zeros(size(coordinates,1),7);
+trayect=zeros(N*size(coordinates,1),7);
+q_ant=[0 0 0 0 0 0 0];
 
 for k=1:size(coordinates,1)
   E=coordinates(k,:);
   
   MTH=transl(E(1:3))*rpy2tr(E(4:6),'deg');
   
-  [q_calc,e]=inverse_k(MTH, RKuka);
-  rta(k,:)=q_calc;  
-  disp ("k:"+k +"  error:" + any(e, 'all'))
+  [q_calc,e,Tcalc]=inverse_k(MTH, RKuka);
+  rta(k,:)=q_calc;
+  
+  trayect((1:N)+(k-1)*N,:)=q_ant+(q_calc-q_ant).*t;
+  
+  %disp ("k:"+k +"  error:" + any(e, 'all'))
   
   if any(e, 'all')
     disp('toteo en' +k+ ':(')
     disp(e)
   end
-   
+   q_ant=q_calc;
+  
+  comparacion=table(Tcalc,MTH);
+  
+   disp("Pose "+k)
+   disp( E)
+   disp(comparacion)
+  %input("hola")
 end
-rta
+rta*180/pi
+%RKuka.plot(trayect)
+
 
 %%
 close all
@@ -204,7 +221,7 @@ show(RkukaRST,qRST);
 
 %% functions
 
-function [q_calc,e]=inverse_k(MTH, RKuka)
+function [q_calc,e,Tcalc]=inverse_k(MTH, RKuka)
   
 L1=0.340; L3=0.400; L5=0.400; L7=0.161;
 
@@ -231,10 +248,15 @@ gamma=atan2(r,z-L1);
 
 % posición
 q3=0;         % reducción de grados de libertad 
+
 q1=atan2(y,x);
 q4=atan2(s4,c4);
 
 q2=-beta+gamma;
+
+
+% c3= (L1+L5*cos(q2)*c4 +L3*cos(q2)-z )/(L3*sin(q1)*s4)
+% q3=atan2(sqrt(1-c3^2),c3);
 
 
 q_calc=[q1,q2,q3,q4,0,0,0];
@@ -263,5 +285,6 @@ q_calc=[q1,q2,q3,q4,q_567];
 Tcalc=RKuka.fkine(q_calc);
 
 e=round(Tcalc -MTH,10);
+
 
 end
