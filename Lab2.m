@@ -157,8 +157,44 @@ hold on
 RKuka.plot([q_calc(1:n), zeros(1,7-n)].*t)
 
 
-%% 5.2 (old)
 
+%% Cinematica Inversa Toolbox RCV
+clear variables
+clc
+syms q1 q2 q3 q4 q5 q6 q7 MF L_1 L_2 L_3 real
+MF=0.161;
+L_1=0.34;
+L_2=0.40;
+L_3=0.40;
+L4(1) = Link('revolute'   ,'alpha',      0,  'a',  0,     'd',    L_1 , 'offset',     0, 'qlim',  [-170*pi/180 170*pi/180],   'modified');
+L4(2) = Link('revolute'  ,'alpha',   pi/2,  'a',  0, 'd',    0 , 'offset',    0, 'qlim',       [-120*pi/180 120*pi/180],   'modified');
+L4(3) = Link('revolute'   ,'alpha',  -pi/2,  'a',  0,     'd',    L_2 , 'offset',     0, 'qlim',  [-170*pi/180 170*pi/180],   'modified');
+L4(4) = Link('revolute'   ,'alpha',  pi/2,  'a',  0,     'd',    0 , 'offset',     0, 'qlim',  [-120*pi/180 120*pi/180],   'modified');
+L4(5) = Link('revolute'   ,'alpha',  -pi/2,  'a',  0,     'd',    L_3 , 'offset',     0, 'qlim',  [-170*pi/180 170*pi/180],   'modified');
+L4(6) = Link('revolute'   ,'alpha',  pi/2,  'a',  0,     'd',    0 , 'offset',     0, 'qlim',  [-120*pi/180 120*pi/180],   'modified');
+L4(7) = Link('revolute'   ,'alpha',  -pi/2,  'a',  0,     'd',    MF , 'offset',     0, 'qlim',  [-175*pi/180 175*pi/180],   'modified');
+
+ws=[-10 50 -30 30 -2 70];
+
+plot_options = {'workspace',ws,'scale',.4,'view',[125 25],'basewidth',10};
+RKuka = SerialLink(L4,'name','Kuka','plotopt',plot_options);
+
+
+q=[0 -pi/3 0 pi/3 0 pi/3 0]; %Punto de prueba
+MTH=RKuka.fkine(q); %MTH punto de prueba
+
+qikine=(RKuka.ikine(MTH)); %Cinematica inversa funcion ikine
+MTHikine=RKuka.fkine(qikine);%Verificacion MTH a partir de solucion ikine
+
+qikunc=(RKuka.ikunc(MTH));%Cinematica inversa funcion ikunc
+MTHikunc=RKuka.fkine(qikunc);%Verificacion MTH a partir de solucion ikunc
+
+qikcon=(RKuka.ikcon(MTH));%Cinematica inversa funcion okcon
+MTHikcon=RKuka.fkine(qikcon);%Verificacion MTH a partir de solucion ikcon
+
+%% Cinematica Inversa Toolbox RST
+clear variables
+clc
 MF=0.161;
 dhparams = [0   	0	0.340   	0;
             0	pi/2       0       0
@@ -207,15 +243,46 @@ addBody(RkukaRST,body5,'body4')
 addBody(RkukaRST,body6,'body5')
 addBody(RkukaRST,body7,'body6')
 
-%test=homeConfiguration(RkukaRST)
-q=[pi/3 pi/6 pi/2 pi/4 3*pi/4 3*pi/4 3*pi/4];
+
+q=[0 -pi/3 0 pi/3 0 pi/3 0];%Cnfiguración punto de prueba 
 qRST = struct('JointName',{'jnt1','jnt2','jnt3','jnt4','jnt5','jnt6','jnt7'},'JointPosition',{q(1),q(2),q(3),q(4),q(5),q(6),q(7)});
 
-%motionModel = taskSpaceMotionModel("RigidBodyTree",RkukaRST)
-transformRST = getTransform(RkukaRST,qRST,'body7')
-clf
-figure()
-show(RkukaRST,qRST);
+
+MTH_RST = getTransform(RkukaRST,qRST,'body7')%MTH a partir del punto de prueba
+
+ik = inverseKinematics('RigidBodyTree',RkukaRST);%Declaracion del solucionador de la cinematica inversa
+weights = [0.25 0.25 0.25 1 1 1];%Tolerancias deseadas para la solucion
+initialguess = RkukaRST.homeConfiguration;%Aproximacion inicial a la solucion
+[configSol,solInfo] = ik('body7',MTH_RST,weights,initialguess);%Solucion cinematica inversa a partir de los parametros anteriores
+qsolRST = struct2table(configSol);
+
+MTHinvRST=getTransform(RkukaRST,configSol,'body7');%Verificacion MTH a partir de solucion encontrada
+
+%% Pruebas
+coordinates=[ 0.4 0.6 0.5 30 20 45;
+              -0.35 0.4 0.8 40 60 10;
+              0.3 0.2 -0.1 -30 180 4;
+              0.4 0.5 0 30 45  10];
+
+CR1 = coordinates( 1, 4:6);
+CR1 = eul2tr(CR1);
+CR1(1:3 , 4) = coordinates(1:3,1)';
+% MTH = [ [0.3 0.5 0.5 0 ]' [0.3 0.3 0.4 0 ]' [0.2 0 0 0 ]' [0.2 0.2 0.3 1]' ]; 
+
+
+[Qa , e1 ] = inverse_k(CR1 ,RKuka)
+
+R1 = tr2eul(MTH(1:3,1:3));
+
+CR1 = coordinates( 1, 4:6);
+CR1 = eul2tr(CR1);
+CR1(1:3 , 4) = coordinates(1:3,1)';
+% MTH = [ [0.3 0.5 0.5 0 ]' [0.3 0.3 0.4 0 ]' [0.2 0 0 0 ]' [0.2 0.2 0.3 1]' ]; 
+
+
+[Qa , e1 ] = inverse_k(CR1 ,RKuka)
+
+R1 = tr2eul(MTH(1:3,1:3));
 
 
 
@@ -288,3 +355,5 @@ e=round(Tcalc -MTH,10);
 
 
 end
+
+
