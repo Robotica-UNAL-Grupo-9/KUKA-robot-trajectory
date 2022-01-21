@@ -1,7 +1,50 @@
 %% 6
 clc, clear ,close all
 
+clc, clear ,close all
 
+%jtraj 
+%mtraj
+rMax=1;
+p0=[0,0,0];
+L=0.4*rMax;
+t=linspace(0,1,100);
+
+x=[0,-1,-1,1,1,0];
+y=[-1,-1,1,1,-1,-1]+1;
+n=length(x);
+z=zeros(1,n);
+Plano=transl(p0)*troty(45,'deg')*[x;y;z;ones(1,n)]
+% n=[1 0 1] -> Roty(45,'deg')
+X=Plano(1,:);
+Y=Plano(2,:);
+Z=Plano(3,:);
+
+
+
+qdMax=1/100*[  170;  120; 170;  120;170;  120; 175];
+q0=[0 0 0 0 0 0 0 ]; 
+q0=[0 0 0 ]; 
+
+% q = invekinematic(Plano)
+q=q0+Plano(1:3,:)';
+%traj = mstraj(p, qdmax, tseg, q0, dt, tacc, options)
+tseg=20;
+qdmax=2;
+dt=0.01;
+tacc=0.3;     % tiempo de aceleracion
+qdmax=2;
+
+traj=jtraj(q0,q(end,:),tseg);
+
+%traj = mstraj(p, qdmax, tseg, q0, dt, tacc, options)
+traj = mstraj(q,qdmax,[], q0,dt,tacc)
+
+plot3(X,Y,Z)
+hold on
+plot3(traj(:,1),traj(:,2),traj(:,3))
+
+%%
 L1=0.340; L3=0.400; L5=0.400; L7=0.161;
 
 % theta_i d_i a_(i-1) alpha_(i-1) [rad]
