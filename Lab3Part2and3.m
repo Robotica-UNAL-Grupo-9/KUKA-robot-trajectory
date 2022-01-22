@@ -19,7 +19,6 @@ ws=[-2 2 -2 2 -2 2];
 
 plot_options = {'workspace',ws,'scale',.4,'view',[125 25],'basewidth',10};
 RKuka = SerialLink(L4,'name','Kuka','plotopt',plot_options);
-%%
 
 cir = circle([0.2,0], 0.2);%Trayectoria circular
 
@@ -34,7 +33,7 @@ for i = length(y):-1:2
 end
 
 MTH1=transl(0.34,-0.2,0.34)*troty(45,'deg');%
-MTH2=MTH1*transl(0,0.6,0);
+MTH2=MTH1*transl(0,0.2,0);
 MTH3=zeros(4,4,25);
 MTH3(:,:,1)=MTH2*transl(x(1),y(1),0);
 for i=2:length(x)
@@ -47,7 +46,7 @@ end
 
 %  MTH3=MTH2*transl(0.4,0.0,0);
 
- MTH4=MTH3(:,:,25)*transl(0,-0.6,0);
+ MTH4=MTH3(:,:,25)*transl(0,-0.2,0);
  MTH5=MTH4*transl(-0.4,0,0);
 
 
@@ -76,29 +75,12 @@ for i=1:length(q_ctraj)
     pause(0.1)
 end
 
-%%
 figure
-plot(q_ctraj*180/pi,'linewidth',2)
+plot(q_ctraj,'linewidth',2)
 grid on
-yline(-170,'--b')
-yline(170,'--b')
-yline(-120,'--r')
-yline(120,'--r')
-
-
-
-legend('q1 b','q2 r','q3 b','q4 r','q5 b','q6 r ','q7 b')
+legend('q1','q2','q3','q4','q5','q6','q7')
 xlabel('Paso de tiempo')
-%%
-[R,p]=tr2rt(RKuka.fkine(q_ctraj));
-Xs=p(:,1);
-Ys=p(:,2);
-Zs=p(:,3);
-plot3(Xs,Ys,Zs);
-xlabel('X') 
-ylabel('Y')
-zlabel('Z')
-view([50,15])
+
 %% 
 via=q_ctraj;
 time=ones(1,60);
@@ -128,4 +110,93 @@ for i=1:length(q_s)
     axis([-1 3 -1 2])
     M(i) = getframe();
 
+end
+%% Modelo diferencial
+%A partir del ejemplo del Calculo del Jacobiano del Robot Stanford por
+%metodos geometricos
+
+%Matrices MTH
+T01 = RKuka.A(1, [q1 q2 q3 q4 q5 q6 q7])
+T12 = RKuka.A(2, [q1 q2 q3 q4 q5 q6 q7]);
+T23 = RKuka.A(3, [q1 q2 q3 q4 q5 q6 q7]);
+T34 = RKuka.A(4, [q1 q2 q3 q4 q5 q6 q7]);
+T45 = RKuka.A(5, [q1 q2 q3 q4 q5 q6 q7]);
+T56 = RKuka.A(6, [q1 q2 q3 q4 q5 q6 q7]);
+T67 = RKuka.A(7, [q1 q2 q3 q4 q5 q6 q7]);
+
+R_tool = [1 0 0; 0 1 0; 0 0 1]; P_tool = [0 0 0]';
+T_4_tool = rt2tr(R_tool,P_tool);
+
+
+A01 = simplify(T01);
+A02 = simplify(A01*T12);
+A03 = simplify(A02*T23);
+A04 = simplify(A03*T34);
+A05 = simplify(A04*T45);
+A06 = simplify(A05*T56);
+A07 = simplify(A06*T67);
+
+A0NOA = A07*T_4_tool; %Cinematica directa
+% Calculos de 0Zi
+z01 = A01(1:3,3); %art 1
+z02 = A02(1:3,3); %art 2
+z03 = A03(1:3,3); %art 3
+z04 = A04(1:3,3); %art 4
+z05 = A05(1:3,3); %art 5
+z06 = A06(1:3,3); %art 6
+z07 = A07(1:3,3); %art 7
+
+%Vectores Pi
+p7NOA=A0NOA(1:3,4)-A07(1:3,4);
+p6NOA=A0NOA(1:3,4)-A06(1:3,4);
+p5NOA=A0NOA(1:3,4)-A05(1:3,4);
+p4NOA=A0NOA(1:3,4)-A04(1:3,4);
+p3NOA=A0NOA(1:3,4)-A03(1:3,4);
+p2NOA=A0NOA(1:3,4)-A02(1:3,4);
+p1NOA=A0NOA(1:3,4)-A01(1:3,4);
+%Jacobianos
+J1=[(skew(z01)*p1NOA); z01]; %Rotacional
+J2=[(skew(z02)*p2NOA); z02]; %Rotacional
+J3=[(skew(z03)*p3NOA); z03]; %Rotacional
+J4=[(skew(z04)*p4NOA); z04]; %Rotacional
+J5=[(skew(z05)*p5NOA); z05]; %Rotacional
+J6=[(skew(z06)*p6NOA); z06]; %Rotacional
+J7=[(skew(z07)*p7NOA); z07]; %Rotacional
+jacob=([J1,J2,J3,J4,J5,J6,J7]); %% Matriz jacobiana a manera simbólica en función de q1,q2,q3,q4,q5 
+jacob=ceros(jacob);
+
+%%
+q1=0;
+q2=0;
+q3=0;
+q4=0;
+q5=0;
+q6=0;
+q7=0;
+jacob_solve=eval(Jacobiano)
+v=[0.100 0.200 0.050]; %m/s
+w=[5 10 -5];    %rad/s
+
+dq_solve= pinv(Jacobiano_resul)*[v w]'
+
+%% Comprobacion Jacobiano
+q=[0 0 0 0 0 0 0]; %posición a analizar
+
+jacobiano=RKuka.jacob0(q)
+
+v=[0.100 0.200 0.050]; %m/s
+w=[5 10 -5];    %rad/s
+
+dq=pinv(jacobiano)*[v w]';
+
+%%
+function T=ceros(MTH)
+    for i=1:4
+        for j=1:4
+            [C,T]=coeffs(MTH(i,j));
+            C=round(C);
+            MTH(i,j)=dot(C,T);
+        end
+    end
+    T=MTH;
 end
