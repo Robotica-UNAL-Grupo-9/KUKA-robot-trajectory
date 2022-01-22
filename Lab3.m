@@ -6,12 +6,14 @@ clc, clear ,close all
 %mtraj
 
 
-rMax=0.6;
-p0=[0.1,-0.4,.8];
-L_distance=0.4*rMax;
+rMax=1.2;
+
+rMin=0.4;
+p0=[0.5,-0.2,0.75];
+L_distance=0.4*rMax/2;
 t=linspace(0,1,100);
 
-x=([0,-1,-1,1,1,0]).*L_distance;
+x=0.4*([0,-1,-1,1,1,0]).*L_distance;
 y=([-1,-1,1,1,-1,-1]+1)*L_distance;
 n=length(x);
 z=zeros(1,n);
@@ -43,10 +45,16 @@ traj = mstraj(q,qdmax,[], p0,dt,tacc)
 
 
 %traj=traj(1:end,:)
+[x, y, z] = sphere(20)
 
-plot3(X,Y,Z)
+plot3(X,Y,Z,'LineWidth',2)
 hold on
-plot3(traj(:,1),traj(:,2),traj(:,3),'--')
+plot3(traj(:,1),traj(:,2),traj(:,3), 'LineWidth',2.5)
+% limite interior
+surf(rMin*x,rMin*y,rMin*z+0.34)
+% limite exterior
+surf(rMax*x,rMax*y,rMax*z+0.34,'faceColor','none')
+
 grid on
 axis equal
 xlim([-1,1])
@@ -55,8 +63,8 @@ zlim([-1,2])
 xline(0)
 yline(0)
 
-figure()
-plot(traj(:,1))
+% figure()
+% plot(traj(:,1))
 
 %% Robot DH specifications
 L1=0.340; L3=0.400; L5=0.400; L7=0.161;
@@ -86,39 +94,67 @@ end
   
 ws=[-5 2 -4 4 -2 5];
 
-plot_options = {'workspace',ws,'scale',.2,'view',[170 20],'jaxes','basewidth',10};
+plot_options = {'workspace',ws,'scale',.2,'view',[170 12],'basewidth',10,'noarrow'};
 RKuka = SerialLink(L,'name','Kuka','plotopt',plot_options)
 
 %%
+close all
+for k= 1:size(traj,1)
+  
+  MTH(:,:,k)=transl(traj(k,:))*troty(45,'deg');
 
-MTH=transl(traj)
+end
 %figure('units','normalized','outerposition',[0 0 1 1])
 q_ant=[-0.4677   37.8473    0.0046 -130.2803   -0.0007   35.8844    0.4630];
 q_all=zeros(7, size(traj,1) );
-qikine=RKuka.ikine(MTH);
-plot(qikine,'.','MarkerSize',5)
+qikine=RKuka.ikunc(MTH);
+plot(180/pi*qikine,'-','linewidth',2,'MarkerSize',5)
+grid on
+yline(-170,'--b')
+yline(170,'--b')
+yline(-120,'--r')
+yline(120,'--r')
 
 
+
+legend('q1 b','q2 r','q3 b','q4 r','q5 b','q6 r ','q7 b')
+xlabel('Paso de tiempo')
+%
 %%
-qikine=RKuka.ikine(MTH(:,:,1),'alpha',0.1);
- plot(RKuka,qikine)
- hold on
- plot3(traj(1:k,1),traj(1:k,2),traj(1:k,3),'.')
- hold off
+plot(RKuka,qikine(1,:))
+hold on
+plot3(traj(:,1),traj(:,2),traj(:,3),'.')
+  xlim([-1,1])
+ylim([-1,1])
+zlim([-1,2])
+xline(0)
+yline(0)
+
+% qikine=RKuka.ikunc(MTH(:,:,1));
+%  plot(RKuka,qikine)
+%  hold on
+%  plot3(traj(1:k,1),traj(1:k,2),traj(1:k,3),'.')
+%  hold off
 %% 
 figure()
-qikine=RKuka.ikine(MTH,'alpha',0.9);
+
 
 for k=1:size(traj,1)
   
   plot(RKuka,qikine(k,:))
   hold on
   plot3(traj(1:k,1),traj(1:k,2),traj(1:k,3),'.')
+  axis equal
   xlim([-1,1])
-ylim([-1,1])
-zlim([-1,2])
-xline(0)
-yline(0)
+  ylim([-1,1])
+  zlim([-1,2])
+  xline(0)
+  yline(0)
+  % limite interior
+  surf(rMin*x,rMin*y,rMin*z+0.34)
+  % limite exterior
+  surf(rMax*x,rMax*y,rMax*z+0.34,'faceColor','none')
+  
   hold off
   pause(0.1)
 end

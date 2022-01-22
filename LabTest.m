@@ -19,6 +19,7 @@ ws=[-2 2 -2 2 -2 2];
 
 plot_options = {'workspace',ws,'scale',.4,'view',[125 25],'basewidth',10};
 RKuka = SerialLink(L4,'name','Kuka','plotopt',plot_options);
+%%
 
 cir = circle([0.2,0], 0.2);%Trayectoria circular
 
@@ -75,10 +76,18 @@ for i=1:length(q_ctraj)
     pause(0.1)
 end
 
+%%
 figure
-plot(q_ctraj,'linewidth',2)
+plot(q_ctraj*180/pi,'linewidth',2)
 grid on
-legend('q1','q2','q3','q4','q5','q6','q7')
+yline(-170,'--b')
+yline(170,'--b')
+yline(-120,'--r')
+yline(120,'--r')
+
+
+
+legend('q1 b','q2 r','q3 b','q4 r','q5 b','q6 r ','q7 b')
 xlabel('Paso de tiempo')
 %%
 [R,p]=tr2rt(RKuka.fkine(q_ctraj));
