@@ -50,9 +50,9 @@ end
  MTH5=MTH4*transl(-0.4,0,0);
 
 
-T_traj = ctraj(MTH1,MTH2,8); 
-T_traj3 = ctraj(MTH3(:,:,25),MTH4,8); 
-T_traj4 = ctraj(MTH4,MTH5,8); 
+T_traj = ctraj(MTH1,MTH2,13); 
+T_traj3 = ctraj(MTH3(:,:,25),MTH4,13); 
+T_traj4 = ctraj(MTH4,MTH5,9); 
 
 q_ctraj1 = RKuka.ikunc(T_traj(:,:,:));
 q_ctraj2 = RKuka.ikunc(MTH3(:,:,:));
@@ -63,10 +63,11 @@ q_ctraj=[q_ctraj1;q_ctraj2;q_ctraj3;q_ctraj4];
 
 
 %%
+clf
 figure
 hold on
 trplot(eye(4),'rgb')
-axis([-1.5 1.5 -1.5 1.5 -1.5 1.5])
+axis([-1.2 1.2 -1.2 1.2 -1.2 1.2])
 for i=1:length(q_ctraj)
     punto = RKuka.fkine(q_ctraj(i,:));
     RKuka.plot(q_ctraj(i,:))
@@ -79,7 +80,8 @@ figure
 plot(q_ctraj,'linewidth',2)
 grid on
 legend('q1','q2','q3','q4','q5','q6','q7')
-xlabel('Paso de tiempo')
+xlabel('Puntos intermedios')
+ylabel('Angulo (Rad)')
 
 %% 
 via=q_ctraj;
@@ -187,7 +189,7 @@ jacobiano=RKuka.jacob0(q)
 v=[0.100 0.200 0.050]; %m/s
 w=[5 10 -5];    %rad/s
 
-dq=pinv(jacobiano)*[v w]';
+dq=pinv(jacobiano)*[v w]'
 
 %%
 function T=ceros(MTH)
